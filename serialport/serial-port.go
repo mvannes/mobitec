@@ -1,4 +1,4 @@
-package serial_port
+package serialport
 
 import (
 	"errors"

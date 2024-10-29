@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"mobitec/flipdot"
-	serialport "mobitec/serial-port"
+	"mobitec/serialport"
 	"time"
 )
 
