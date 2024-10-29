@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 )
 
 type Flipdot struct {
 	width       int
 	height      int
 	signAddress byte
-	port        io.ReadWriter
+	port        io.Writer
 }
 
 type Message struct {
@@ -19,6 +20,49 @@ type Message struct {
 	Font             string
 	HorizontalOffset int
 	VerticalOffset   int
+}
+
+type invalidMessageError struct {
+	Messages []string
+}
+
+func (i invalidMessageError) Error() string {
+	return "invalid message provided, errors were: " + strings.Join(i.Messages, ", ")
+}
+
+func NewMessage(text string, font string, horizontalOffset int, verticalOffset int) (Message, error) {
+	m := Message{
+		Text:             text,
+		Font:             font,
+		HorizontalOffset: horizontalOffset,
+		VerticalOffset:   verticalOffset,
+	}
+
+	return m, validateMessage(m)
+}
+
+func validateMessage(m Message) error {
+	var errs []string
+	if len(strings.TrimSpace(m.Text)) == 0 {
+		errs = append(errs, "non empty text must be provided")
+	}
+	if m.HorizontalOffset < 0 {
+		errs = append(errs, "horizontal offset must be a positive integer")
+	}
+
+	if m.VerticalOffset < 0 {
+		errs = append(errs, "vertical offset must be a positive integer")
+	}
+
+	_, err := chooseFont(m.Font)
+	if err != nil {
+		errs = append(errs, "invalid font provided")
+	}
+
+	if len(errs) > 0 {
+		return invalidMessageError{Messages: errs}
+	}
+	return nil
 }
 
 func (f Flipdot) Send(msg Message) error {
@@ -34,7 +78,7 @@ func (f Flipdot) Send(msg Message) error {
 	return nil
 }
 
-func NewFlipdot(width int, height int, signAddress byte, port io.ReadWriter) *Flipdot {
+func NewFlipdot(width int, height int, signAddress byte, port io.Writer) *Flipdot {
 	return &Flipdot{
 		width:       width,
 		height:      height,
@@ -144,16 +188,6 @@ func chooseFont(font string) (byte, error) {
 }
 
 func textToBytes(text string) []byte {
-
-	return []byte{
-		0x45,
-		0x58,
-		0x41,
-		0x4d,
-		0x50,
-		0x4c,
-		0x45,
-	}
 	var bytes []byte
 	for _, char := range text {
 		bytes = append(bytes, byte(char))
