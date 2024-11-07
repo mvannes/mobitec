@@ -25,5 +25,5 @@ func GetPort() (serial.Port, error) {
 		DataBits: 8,
 		StopBits: serial.OneStopBit,
 	}
-	return serial.Open(ports[0], mode)
+	return serial.Open(ports[1], mode)
 }
