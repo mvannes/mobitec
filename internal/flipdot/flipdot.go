@@ -22,11 +22,11 @@ type Message struct {
 	VerticalOffset   int
 }
 
-type invalidMessageError struct {
+type InvalidMessageError struct {
 	Messages []string
 }
 
-func (i invalidMessageError) Error() string {
+func (i InvalidMessageError) Error() string {
 	return "invalid message provided, errors were: " + strings.Join(i.Messages, ", ")
 }
 
@@ -60,7 +60,7 @@ func validateMessage(m Message) error {
 	}
 
 	if len(errs) > 0 {
-		return invalidMessageError{Messages: errs}
+		return InvalidMessageError{Messages: errs}
 	}
 	return nil
 }
