@@ -3,6 +3,8 @@ module mobitec
 go 1.20
 
 require (
+	github.com/go-chi/chi/v5 v5.1.0
+	github.com/go-chi/cors v1.2.1
 	github.com/spf13/cobra v1.8.1
 	go.bug.st/serial v1.6.2
 )
