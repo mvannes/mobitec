@@ -1,6 +1,0 @@
-POST http://localhost:8080/flipdot/enqueue/text/
-
-{
-  "text": "hoi",
-  "font": "text_13px_bolder"
-}

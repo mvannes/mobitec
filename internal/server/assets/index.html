@@ -1,0 +1,64 @@
+<html>
+    <head>
+        <title>Flipboard!</title>
+    </head>
+    <body>
+        <h3>
+           Flipboard!
+        </h3>
+        <form id="text-form">
+            <div>
+                <label for="text">
+                    Text
+                </label>
+                <input type="text" name="text" id="text">
+            </div>
+            <div>
+                <label for="font">Font</label>
+                <select name="font" id="font"></select>
+            </div>
+            <div>
+                <label for="horizontal-offset">Horizontal offset</label>
+                <input type="number" name="font" id="horizontal-offset" value="0"/>
+            </div>
+            <div>
+                <label for="vertical-offset">Vertical offset</label>
+                <input type="number"  name="font" id="vertical-offset" value="0"/>
+            </div>
+            <button type="submit">Send text</button>
+        </form>
+    </body>
+    <script type="text/javascript">
+        const form = document.querySelector('#text-form');
+        const fontSelectField = document.querySelector('#font');
+        const textField = document.querySelector('#text');
+        const horizontalOffsetField = document.querySelector('#horizontal-offset');
+        const verticalOffsetField = document.querySelector('#vertical-offset');
+
+        fetch("/flipdot/fonts").then((res) => {
+            res.json().then(
+                (resp) => {
+                    const opts = [];
+                    for (const font of resp) {
+                        opts.push(
+                            `<option name=${font}>${font}</option>`
+                        )
+                    }
+
+                    font.innerHTML = opts.join("\n")
+                }
+            )
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            fetch("/flipdot/enqueue/text", {method: 'POST', body: JSON.stringify({
+                font: fontSelectField.value,
+                text: textField.value,
+                horizontalOffset: Number(horizontalOffsetField.value),
+                verticalOffset: Number(verticalOffsetField.value),
+            })});
+        });
+    </script>
+</html>
