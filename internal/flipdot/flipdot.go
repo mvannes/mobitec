@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+type PixelState = [][]byte
+
 type Flipdot struct {
 	width       int
 	height      int
@@ -65,17 +67,65 @@ func validateMessage(m Message) error {
 	return nil
 }
 
-func (f Flipdot) Send(msg Message) error {
-	msgBytes, err := makeMessage(f, msg)
+func (f Flipdot) StringToPixelState(input string) PixelState {
+	rows := make([][]byte, f.height)
+	columnCount := f.width
+
+	log.Println(input)
+	inputRows := strings.Fields(input)
+	for rowIndex := 0; rowIndex < len(rows); rowIndex++ {
+		if len(rows[rowIndex]) == 0 {
+			rows[rowIndex] = make([]byte, columnCount)
+		}
+
+		if len(inputRows) < rowIndex+1 {
+			continue
+		}
+
+		inputRowRunes := []rune(inputRows[rowIndex])
+		for runeIndex := 0; runeIndex < len(inputRowRunes); runeIndex++ {
+			if runeIndex+1 > len(rows[rowIndex]) {
+				break
+			}
+
+			switch inputRowRunes[runeIndex] {
+			case '1':
+				rows[rowIndex][runeIndex] = 1
+			case '0':
+			default:
+				rows[rowIndex][runeIndex] = 0
+			}
+		}
+	}
+
+	return rows
+}
+
+func (f Flipdot) SendPixels(pixelState PixelState) ([]byte, error) {
+	log.Println(pixelState)
+	msgBytes, err := makePixelMessage(f, pixelState)
 	if err != nil {
 		log.Fatal(err)
 	}
 	n, err := f.port.Write(msgBytes)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fmt.Printf("Sent %v bytes\n", n)
-	return nil
+	return msgBytes, nil
+}
+
+func (f Flipdot) SendText(msg Message) ([]byte, error) {
+	msgBytes, err := makeTextMessage(f, msg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	n, err := f.port.Write(msgBytes)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("Sent %v bytes\n", n)
+	return msgBytes, nil
 }
 
 func NewFlipdot(width int, height int, signAddress byte, port io.Writer) *Flipdot {
@@ -87,8 +137,15 @@ func NewFlipdot(width int, height int, signAddress byte, port io.Writer) *Flipdo
 	}
 }
 
-func makeMessage(f Flipdot, m Message) ([]byte, error) {
-	header := makeHeader(f.signAddress, f.width, f.height)
+func makePixelMessage(f Flipdot, pixelState PixelState) ([]byte, error) {
+	dataSections, err := pixelStateToBitwiseDataSections(pixelState)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return makeMessage(f, dataSections)
+}
+
+func makeTextMessage(f Flipdot, m Message) ([]byte, error) {
 	fontHex, err := chooseFont(m.Font)
 	if err != nil {
 		return nil, err
@@ -103,6 +160,21 @@ func makeMessage(f Flipdot, m Message) ([]byte, error) {
 	}
 
 	data = append(data, textToBytes(m.Text)...)
+
+	var dataSections [][]byte
+	dataSections = append(dataSections, data)
+
+	return makeMessage(f, dataSections)
+}
+
+func makeMessage(f Flipdot, dataSections [][]byte) ([]byte, error) {
+	header := makeHeader(f.signAddress, f.width, f.height)
+
+	var data []byte
+	for _, dataSection := range dataSections {
+		data = append(data, dataSection...)
+	}
+
 	footer := makeFooter(header, data)
 	return append(append(header, data...), footer...), nil
 }
@@ -185,6 +257,73 @@ func chooseFont(font string) (byte, error) {
 	default:
 		return 0x00, errors.New("unknown Font given")
 	}
+}
+
+func pixelStateToBitwiseDataSections(pixelState PixelState) ([][]byte, error) {
+	const charColumnSize = 5
+
+	fontHex, err := chooseFont("bitwise")
+	if err != nil {
+		return nil, err
+	}
+
+	var lines [][]byte
+	for lineIndex := 0; lineIndex < len(pixelState); lineIndex += charColumnSize {
+		line := []byte{
+			0xd2, // Horizontal offset
+			0x0,
+			0xd3, // Vertical offset
+			byte(lineIndex),
+			0xd4, // Font
+			fontHex,
+		}
+
+		for columnIndex := 0; columnIndex < len(pixelState[lineIndex]); columnIndex++ {
+			r1 := getPixelFromPixelState(pixelState, lineIndex+0, columnIndex)
+			r2 := getPixelFromPixelState(pixelState, lineIndex+1, columnIndex)
+			r3 := getPixelFromPixelState(pixelState, lineIndex+2, columnIndex)
+			r4 := getPixelFromPixelState(pixelState, lineIndex+3, columnIndex)
+			r5 := getPixelFromPixelState(pixelState, lineIndex+4, columnIndex)
+			line = append(line, columnToBitwiseChar(r1, r2, r3, r4, r5))
+		}
+
+		lines = append(lines, line)
+	}
+
+	return lines, nil
+}
+
+func getPixelFromPixelState(pixelState PixelState, row int, column int) byte {
+	if len(pixelState) >= row+1 && len(pixelState[row]) >= column+1 {
+		return pixelState[row][column]
+	}
+	return 0
+}
+
+func columnToBitwiseChar(r1, r2, r3, r4, r5 byte) byte {
+	var charCode byte = 32
+
+	if r1 == 1 {
+		charCode += 1
+	}
+
+	if r2 == 1 {
+		charCode += 2
+	}
+
+	if r3 == 1 {
+		charCode += 4
+	}
+
+	if r4 == 1 {
+		charCode += 8
+	}
+
+	if r5 == 1 {
+		charCode += 16
+	}
+
+	return charCode
 }
 
 func textToBytes(text string) []byte {

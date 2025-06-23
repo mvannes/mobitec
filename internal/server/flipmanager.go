@@ -19,7 +19,7 @@ func manageFlipdot(f *flipdot.Flipdot, msgChan chan flipdot.Message) {
 }
 
 func handleMsg(f *flipdot.Flipdot, msg flipdot.Message) {
-	err := f.Send(msg)
+	_, err := f.SendText(msg)
 	if err != nil {
 		// TODO: create some form of err handling that is either better logging or
 		// TODO: cancelling of the server as it is.

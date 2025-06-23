@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"errors"
-	"github.com/spf13/cobra"
 	"io"
 	"log"
 	"mobitec/internal/flipdot"
+	"mobitec/internal/helpers"
 	"mobitec/internal/serialport"
+
+	"github.com/spf13/cobra"
 )
 
 var textCmd = &cobra.Command{
@@ -30,6 +32,12 @@ var textCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		debug, err := cmd.Flags().GetBool("debug")
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		m, err := flipdot.NewMessage(
 			text,
 			"text_13px_bold",
@@ -53,9 +61,11 @@ var textCmd = &cobra.Command{
 		}
 
 		f := flipdot.NewFlipdot(112, 19, 0x07, port)
-		err = f.Send(m)
+		writtenBytes, err := f.SendText(m)
 		if err != nil {
 			log.Fatal(err)
+		} else if debug {
+			helpers.PrintHex(writtenBytes)
 		}
 	},
 }
@@ -64,5 +74,6 @@ func init() {
 	textCmd.Flags().IntP("horizontal-offset", "o", 0, "Positive number denoting the horizontal offset")
 	textCmd.Flags().IntP("vertical-offset", "v", 0, "Positive number denoting the vertical offset")
 	textCmd.Flags().Bool("no-serial-port", false, "Do not attempt to connect with a serial port when starting the program")
+	textCmd.Flags().Bool("debug", false, "Output the bytes that are written to the serial port")
 	rootCmd.AddCommand(textCmd)
 }
