@@ -27,13 +27,19 @@
             </div>
             <button type="submit">Send text</button>
         </form>
+
+        <form id="pixel-form">
+            <button type="submit">Send pixels</button>
+        </form>
     </body>
     <script type="text/javascript">
-        const form = document.querySelector('#text-form');
+        const textForm = document.querySelector('#text-form');
         const fontSelectField = document.querySelector('#font');
         const textField = document.querySelector('#text');
         const horizontalOffsetField = document.querySelector('#horizontal-offset');
         const verticalOffsetField = document.querySelector('#vertical-offset');
+
+        const pixelForm = document.querySelector('#pixel-form');
 
         fetch("/flipdot/fonts").then((res) => {
             res.json().then(
@@ -50,7 +56,7 @@
             )
         });
 
-        form.addEventListener('submit', (e) => {
+        textForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
             fetch("/flipdot/enqueue/text", {method: 'POST', body: JSON.stringify({
@@ -59,6 +65,32 @@
                 horizontalOffset: Number(horizontalOffsetField.value),
                 verticalOffset: Number(verticalOffsetField.value),
             })});
+        });
+
+        pixelForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            fetch("/flipdot/enqueue/pixels", {method: 'POST', body: JSON.stringify([
+[0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,1,0,0,0,0,1,1,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,1,1,1,0,1,1,1,1,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,0,1,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+[0,0,0,0,0,1,1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+[0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
+[0,0,0,0,0,0,1,1,1,1,0,0,1,0,0,0,1,1,1,0,0,0,0,0,0,0,1,1,0],
+[0,0,0,0,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,0,0,1,0,1,0],
+[0,0,0,0,0,0,1,0,0,1,0,0,1,0,1,0,0,0,0,0,1,0,0,0,0,1,0,1,0],
+[0,0,0,0,0,1,0,0,0,1,0,0,1,1,0,0,0,1,0,0,1,0,0,0,1,0,1,0,0],
+[0,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,0,1,0,0,1,0,1,0,0,1,0,0],
+[0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1,0,0,0,1,0,0,1,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0]
+])});
         });
     </script>
 </html>

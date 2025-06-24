@@ -3,13 +3,14 @@ package server
 import (
 	_ "embed"
 	"encoding/json"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 	"log"
 	"mobitec/internal/flipdot"
 	"mobitec/internal/serialport"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 //go:embed assets/index.html
@@ -32,13 +33,13 @@ func Start() error {
 		return err
 	}
 
-	//port := io.Discard
+	// port := io.Discard
 
 	// TODO: make configurable.
 	f := flipdot.NewFlipdot(112, 19, 0x07, port)
 
 	// Make this smarter, because now the queue is maxed at 200, which seems like a lot.
-	msgChan := make(chan flipdot.Message, 50)
+	msgChan := make(chan FlipdotChange, 50)
 	r.Mount("/flipdot", newControlRouter(msgChan))
 	r.Get("/", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(200)

@@ -3,20 +3,23 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"github.com/go-chi/chi/v5"
 	"log"
 	"mobitec/internal/flipdot"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
-type messageSendRequest struct {
+type textSendRequest struct {
 	Text             string
 	HorizontalOffset int
 	VerticalOffset   int
 	Font             string
 }
 
-func newControlRouter(flipdotMessageChan chan flipdot.Message) chi.Router {
+type pixelSendRequest = flipdot.PixelState
+
+func newControlRouter(flipdotMessageChan chan FlipdotChange) chi.Router {
 	r := chi.NewRouter()
 
 	r.Get("/fonts", func(resp http.ResponseWriter, req *http.Request) {
@@ -46,7 +49,7 @@ func newControlRouter(flipdotMessageChan chan flipdot.Message) chi.Router {
 	r.Post("/enqueue/text", func(resp http.ResponseWriter, req *http.Request) {
 		defer req.Body.Close()
 
-		var message messageSendRequest
+		var message textSendRequest
 		err := json.NewDecoder(req.Body).Decode(&message)
 		if err != nil {
 			writeJson(resp, 500, err)
@@ -67,7 +70,40 @@ func newControlRouter(flipdotMessageChan chan flipdot.Message) chi.Router {
 		}
 
 		select {
-		case flipdotMessageChan <- flipMsg:
+		case flipdotMessageChan <- FlipdotChange{text: &flipMsg}:
+			writeResponse(resp, 200, []byte("Message enqueued"))
+		default:
+			writeResponse(resp, 429, []byte("queue is full, come back later."))
+		}
+	})
+
+	r.Post("/enqueue/pixels", func(resp http.ResponseWriter, req *http.Request) {
+		defer req.Body.Close()
+
+		var pixelStateRequest pixelSendRequest
+		err := json.NewDecoder(req.Body).Decode(&pixelStateRequest)
+		if err != nil {
+			writeJson(resp, 500, err)
+			return
+		}
+
+		log.Println(pixelStateRequest)
+
+		// flipMsg, err := flipdot.NewMessage(message.Text, message.Font, message.HorizontalOffset, message.VerticalOffset)
+		// if err != nil {
+		// 	var invalidMsgErr flipdot.InvalidMessageError
+		// 	if errors.As(err, &invalidMsgErr) {
+		// 		writeJson(resp, 400, invalidMsgErr.Messages)
+		// 		return
+		// 	}
+
+		// 	log.Println(err)
+		// 	writeResponse(resp, 500, []byte("An error occurred during message validation"))
+		// 	return
+		// }
+
+		select {
+		case flipdotMessageChan <- FlipdotChange{pixelState: &pixelStateRequest}:
 			writeResponse(resp, 200, []byte("Message enqueued"))
 		default:
 			writeResponse(resp, 429, []byte("queue is full, come back later."))

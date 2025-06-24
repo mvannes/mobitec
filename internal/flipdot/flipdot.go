@@ -71,7 +71,6 @@ func (f Flipdot) StringToPixelState(input string) PixelState {
 	rows := make([][]byte, f.height)
 	columnCount := f.width
 
-	log.Println(input)
 	inputRows := strings.Fields(input)
 	for rowIndex := 0; rowIndex < len(rows); rowIndex++ {
 		if len(rows[rowIndex]) == 0 {
@@ -102,7 +101,6 @@ func (f Flipdot) StringToPixelState(input string) PixelState {
 }
 
 func (f Flipdot) SendPixels(pixelState PixelState) ([]byte, error) {
-	log.Println(pixelState)
 	msgBytes, err := makePixelMessage(f, pixelState)
 	if err != nil {
 		log.Fatal(err)

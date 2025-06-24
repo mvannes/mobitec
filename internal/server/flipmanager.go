@@ -6,8 +6,13 @@ import (
 	"time"
 )
 
+type FlipdotChange struct {
+	text       *flipdot.Message
+	pixelState *flipdot.PixelState
+}
+
 // TODO: Add some manner of cancelling these running go routines when server should stop.
-func manageFlipdot(f *flipdot.Flipdot, msgChan chan flipdot.Message) {
+func manageFlipdot(f *flipdot.Flipdot, msgChan chan FlipdotChange) {
 	for {
 		select {
 		case msg := <-msgChan:
@@ -18,8 +23,19 @@ func manageFlipdot(f *flipdot.Flipdot, msgChan chan flipdot.Message) {
 	}
 }
 
-func handleMsg(f *flipdot.Flipdot, msg flipdot.Message) {
-	_, err := f.SendText(msg)
+func handleMsg(f *flipdot.Flipdot, msg FlipdotChange) {
+	var err error
+	if msg.text != nil {
+		_, sendErr := f.SendText(*msg.text)
+		err = sendErr
+	} else if msg.pixelState != nil {
+		_, sendErr := f.SendPixels(*msg.pixelState)
+		err = sendErr
+	} else {
+		log.Println("error occurred during msg sending: FlipdotChange has no pixelState or text")
+		return
+	}
+
 	if err != nil {
 		// TODO: create some form of err handling that is either better logging or
 		// TODO: cancelling of the server as it is.
