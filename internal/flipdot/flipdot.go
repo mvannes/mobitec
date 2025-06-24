@@ -272,9 +272,9 @@ func pixelStateToBitwiseDataSections(pixelState PixelState) ([][]byte, error) {
 		line := []byte{
 			0xd2, // Horizontal offset
 			0x0,
-			0xd3, // Vertical offset
-			byte(lineIndex),
-			0xd4, // Font
+			0xd3,                // Vertical offset
+			byte(lineIndex + 4), // 4 is initial offset? Offset is from bottom?
+			0xd4,                // Font
 			fontHex,
 		}
 
