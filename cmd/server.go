@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"log"
 	"mobitec/internal/server"
+
+	"github.com/spf13/cobra"
 )
 
 var serverCmd = &cobra.Command{
