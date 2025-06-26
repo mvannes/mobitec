@@ -267,25 +267,44 @@ func pixelStateToBitwiseDataSections(pixelState PixelState) ([][]byte, error) {
 
 	var lines [][]byte
 	for lineIndex := 0; lineIndex < len(pixelState); lineIndex += charColumnSize {
-		line := []byte{
-			0xd2, // Horizontal offset
-			0x0,
-			0xd3,                // Vertical offset
-			byte(lineIndex + 4), // 4 is initial offset? Offset is from bottom?
-			0xd4,                // Font
-			fontHex,
-		}
+		var lineBody []byte
 
+		emptyColumnsStart := 0
+		emptyColumnChar := columnToBitwiseChar(0, 0, 0, 0, 0)
 		for columnIndex := 0; columnIndex < len(pixelState[lineIndex]); columnIndex++ {
 			r1 := getPixelFromPixelState(pixelState, lineIndex+0, columnIndex)
 			r2 := getPixelFromPixelState(pixelState, lineIndex+1, columnIndex)
 			r3 := getPixelFromPixelState(pixelState, lineIndex+2, columnIndex)
 			r4 := getPixelFromPixelState(pixelState, lineIndex+3, columnIndex)
 			r5 := getPixelFromPixelState(pixelState, lineIndex+4, columnIndex)
-			line = append(line, columnToBitwiseChar(r1, r2, r3, r4, r5))
+			char := columnToBitwiseChar(r1, r2, r3, r4, r5)
+
+			if char == emptyColumnChar && columnIndex == emptyColumnsStart {
+				emptyColumnsStart++
+			} else {
+				lineBody = append(lineBody, char)
+			}
 		}
 
-		lines = append(lines, line)
+		// Trim end
+		for {
+			if len(lineBody) > 0 && lineBody[len(lineBody)-1] == emptyColumnChar {
+				lineBody = lineBody[:len(lineBody)-1]
+			} else {
+				break
+			}
+		}
+
+		lineHeader := []byte{
+			0xd2, // Horizontal offset
+			byte(emptyColumnsStart),
+			0xd3,                // Vertical offset
+			byte(lineIndex + 4), // 4 is initial offset? Offset is from bottom?
+			0xd4,                // Font
+			fontHex,
+		}
+
+		lines = append(lines, lineHeader, lineBody)
 	}
 
 	return lines, nil
