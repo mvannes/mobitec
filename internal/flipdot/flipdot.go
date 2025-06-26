@@ -136,7 +136,7 @@ func NewFlipdot(width int, height int, signAddress byte, port io.Writer) *Flipdo
 }
 
 func makePixelMessage(f Flipdot, pixelState PixelState) ([]byte, error) {
-	dataSections, err := pixelStateToBitwiseDataSections(pixelState)
+	dataSections, err := pixelStateToBitwiseDataSections(f, pixelState)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -257,7 +257,7 @@ func chooseFont(font string) (byte, error) {
 	}
 }
 
-func pixelStateToBitwiseDataSections(pixelState PixelState) ([][]byte, error) {
+func pixelStateToBitwiseDataSections(f Flipdot, pixelState PixelState) ([][]byte, error) {
 	const charColumnSize = 5
 
 	fontHex, err := chooseFont("bitwise")
@@ -266,12 +266,12 @@ func pixelStateToBitwiseDataSections(pixelState PixelState) ([][]byte, error) {
 	}
 
 	var lines [][]byte
-	for lineIndex := 0; lineIndex < len(pixelState); lineIndex += charColumnSize {
+	for lineIndex := 0; lineIndex < f.height; lineIndex += charColumnSize {
 		var lineBody []byte
 
 		emptyColumnsStart := 0
 		emptyColumnChar := columnToBitwiseChar(0, 0, 0, 0, 0)
-		for columnIndex := 0; columnIndex < len(pixelState[lineIndex]); columnIndex++ {
+		for columnIndex := 0; columnIndex < f.width; columnIndex++ {
 			r1 := getPixelFromPixelState(pixelState, lineIndex+0, columnIndex)
 			r2 := getPixelFromPixelState(pixelState, lineIndex+1, columnIndex)
 			r3 := getPixelFromPixelState(pixelState, lineIndex+2, columnIndex)
