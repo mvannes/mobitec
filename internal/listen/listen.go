@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"time"
+	"net/http"
 
 	"github.com/gorilla/websocket"
 )
@@ -22,7 +23,7 @@ type ApiMessageFrame struct {
 
 type ApiMessage []ApiMessageFrame
 
-func Start(host string, noSerialPort bool) {
+func Start(host string, authKey string, noSerialPort bool) {
 	var port io.Writer
 	var err error
 	if noSerialPort {
@@ -45,7 +46,7 @@ func Start(host string, noSerialPort bool) {
 	u := url.URL{Scheme: "ws", Host: host, Path: ""}
 	log.Printf("connecting to %s", u.String())
 
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"auth-key": []string{authKey} })
 	if err != nil {
 		log.Fatal("dial:", err)
 	}
